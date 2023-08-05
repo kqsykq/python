@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/semantic.min.css">
+    <link rel="stylesheet" href="../static/css/custom.css">
+
+    <script src="../static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="../static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="../static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <title>发布新的通知</title>
+</head>
+
+<body>
+    <div id="container">
+        <!-- 导航 start-->
+        <nav class="ui inverted attached segment m-shadow-small">
+            <div class="ui container">
+                <div class="ui inverted secondary stackable menu m-padded-tb-mini">
+                    <h2 class="ui teal header item">后台管理</h2>
+                    <a href="/" class="item m-mobile-hide m-item"><i class="home icon"></i>返回首页</a>
+                    <a href="account.html" class="item m-mobile-hide m-item"><i class="tag icon"></i>用户账号管理</a>
+                    <a href="articles.html" class="item m-mobile-hide m-item"><i class="clone icon"></i>论文管理</a>
+                    <a href="news.html" class="item m-mobile-hide m-item"><i class="newspaper icon"></i>校园新闻管理</a>
+                    <a href="notices.html" class="item active m-mobile-hide m-item"><i class="info icon"></i>通知管理</a>
+                    <div class="right m-mobile-hide item m-item">
+                        <div v-if="localStorage.token" class="item m-mobile-hide m-item"><i class="user icon"></i>{{ localStorage.用户名 }}</div>
+                    </div>
+                </div>
+            </div>
+            <a class="ui menu toggle black icon button m-top-right m-mobile-show" v-on:click="sidebar">
+                <i class="sidebar icon"></i>
+            </a>
+        </nav>
+        <!-- 导航 end -->
+
+        <!-- 中间内容  start-->
+        <div class="m-padded-tb-big m-container-small">
+            <div class="ui container">
+                <div class="ui fluid input">
+                    <input type="text" placeholder="一个好的标题会让人耳目一新..." v-model="通知标题">
+                </div>
+                <div class="ui divider"></div>
+                <div id="div1">
+
+                </div>
+                <div class="ui divider"></div>
+                <a class="ui primary right floated button" @click="addnotice">发布</a>
+            </div>
+        </div>
+        <!-- 中间内容 end-->
+
+        <!-- 底部 -->
+        <div id="footer"></div>
+        <script>
+            $(function(){
+                $('#footer').load('../static/footer.html')
+            })
+        </script>
+        <!-- 底部 -->
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                通知标题: '',
+            },
+            methods: {
+                sidebar() {
+                    // 移动端，导航页开启关闭
+                    $(".m-item").toggleClass('m-mobile-hide');
+                },
+                addnotice() {
+                    fetch('/api/notice', {
+                        method: 'post',
+                        body: JSON.stringify({
+                            通知标题: this.通知标题,
+                            通知内容: editor.txt.html(),
+                        }),
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200) {
+                            alert('通知发布成功！')
+                            location.href = 'notices.html'
+                        } else {
+                            alert(json.message)
+                        }
+                    })
+                },
+            }
+        })
+    </script>
+</body>
+<script type="text/javascript" src="../static/js/wangEditor-4.6.9.min.js"></script>
+<script type="text/javascript">
+  const E = window.wangEditor
+  const editor = new E("#div1")
+  //设置编辑区高度，默认300
+  editor.config.height = 300
+  //上传服务器接口地址
+  editor.config.uploadImgServer = '/api/upload'
+  //限制一次最多能传几张图片(默认是100张)
+  editor.config.uploadImgMaxLength = 9
+  //自定义 fileName
+  editor.config.uploadFileName = 'upload'
+  //上传图片时添加 http 请求的 header
+  editor.config.uploadImgHeaders = {Token: localStorage.token, }
+  //隐藏插入网络图片的功能，即只保留上传本地图片
+  editor.config.showLinkImg = false
+  //网络图片设置alt和跳转链接
+  editor.config.showLinkImgAlt = false
+  editor.config.showLinkImgHref = false
+
+  editor.create()
+</script>
+</html>

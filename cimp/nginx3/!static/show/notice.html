@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/semantic.min.css">
+    <link rel="stylesheet" href="../static/css/custom.css">
+
+    <script src="../static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="../static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="../static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <title>通知公告</title>
+</head>
+<body>
+    <div id="container">
+        <!-- 导航 -->
+        <nav class="ui inverted attached segment m-shadow-small">
+            <div class="ui container">
+                <div class="ui inverted secondary stackable menu m-padded-tb-mini">
+                    <h2 class="ui teal header item">CIMP</h2>
+                    <a href="/" class="item m-mobile-hide m-item"><i class="home icon"></i>首页</a>
+                    <a href="articles.html" class="item m-mobile-hide m-item"><i class="idea icon"></i>优秀论文</a>
+                    <a href="news.html" class="item m-mobile-hide m-item"><i class="clone icon"></i>校园新闻</a>
+                    <a href="notices.html" class="item active m-mobile-hide m-item"><i class="info icon"></i>通知公告</a>
+                    <!-- 搜索
+                    <div class="right item m-mobile-hide m-item">
+                        <div class="ui icon inverted transparent input">
+                            <input type="text" placeholder="Search...">
+                            <i class="search link icon"></i>
+                        </div>
+                    </div>
+                    -->
+                    <div class="right m-mobile-hide item m-item">
+                        <a v-if="!localStorage.token" href="/login.html" class="ui primary button">注册/登录</a>
+                        <div v-if="localStorage.token" class="item m-mobile-hide m-item"><i class="user icon"></i>{{ 当前在线用户的用户名 }}</div>
+                        <a v-if="localStorage.usertype==1" href="/manage" class="item m-mobile-hide m-item"><i class="users icon"></i>后台管理</a>
+                        <a v-if="localStorage.usertype==2" href="/manage/articleaudit.html" class="item m-mobile-hide m-item"><i class="eraser icon"></i>论文审批</a>
+                        <a v-if="localStorage.usertype==3" href="/manage/articlepublic.html" class="item m-mobile-hide m-item"><i class="file pdf icon"></i>论文提交</a>
+                        <a v-if="localStorage.token" @click.prevent="logout()" class="item m-mobile-hide m-item"><i class="power off icon"></i>退出登录</a>
+                    </div>
+                </div>
+            </div>
+            <a class="ui menu toggle black icon button m-top-right m-mobile-show" v-on:click="sidebar">
+                <i class="sidebar icon"></i>
+            </a>
+        </nav>
+
+        <!-- 中间内容 -->
+        <div class="m-padded-tb-big m-container-small">
+            <div class="ui container">
+                <div class="ui stackable grid">
+                    <h1 class="ui header">{{ 通知标题 }}</h1>
+                    <p v-html='通知内容'></p>
+                    <h3 class="ui orange header m-inline-blok m-text-thin">发布人：{{ 通知发布人真实姓名 }}</h3>
+                    <h3 class="ui purple header m-inline-blok m-text-thin">通知时间：{{ 发布时间 }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div id="footer"></div>
+        <script>
+            $(function(){
+                $('#footer').load('../static/footer.html')
+            })
+        </script>
+        <!-- 底部 -->
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                当前在线用户的用户名: localStorage.用户名,
+                通知标题: '',
+                通知内容: '',
+                通知发布人真实姓名: '',
+                发布时间:'',
+            },
+            created() {
+                fetch('/api/notice/' + document.location.href.split('=')[1], {
+                    headers: {
+                        'content-type': 'application/json',
+                    }
+                }).then(resp => resp.json()).then(json => {
+                    if (json.code == 200){
+                        this.通知标题 = json.通知标题
+                        this.通知内容 = json.通知内容
+                        this.通知发布人真实姓名 = json.通知发布人真实姓名
+                        this.发布时间 = json.发布时间.split('T')[0]
+                        document.通知标题 = this.通知标题
+                    }
+                    else {
+                        alert('该通知不存在！')
+                    }
+                    })
+            },
+            methods: {
+                sidebar() {
+                    // 移动端，导航页开启关闭
+                    $(".m-item").toggleClass('m-mobile-hide');
+                },
+                logout() {
+                    localStorage.clear()
+                    this.当前在线用户的用户名 = ''
+                }
+            }
+        })
+    </script>
+</body>
+</html>

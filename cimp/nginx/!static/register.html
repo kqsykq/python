@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册</title>
+    <link rel="stylesheet" href="static/css/semantic.min.css">
+    <script src="static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <style type="text/css">
+        body {
+            background-color: #DADADA;
+        }
+        body > .grid {
+            height: 100%;
+        }
+        .image {
+            margin-top: -100px;
+        }
+        .column {
+            max-width: 450px;
+        }
+    </style>
+</head>
+<body>
+<div id="container" class="ui middle aligned center aligned grid">
+    <div class="column">
+        <h2 class="ui teal image header">
+            <img src="static/img/profile.jpg" class="image">
+            <div class="content">
+                注册账号
+            </div>
+        </h2>
+        <form class="ui large form">
+            <div class="ui stacked segment">
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="text" placeholder="用户名（必填项）" v-model="用户名">
+                    </div>
+                </div>
+                <div class="field">
+                  <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input type="password" placeholder="密码（必填项）" v-model="密码">
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input type="password" placeholder="确认密码（必填项）" v-model="确认密码">
+                  </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="address card icon"></i>
+                        <input type="text" placeholder="真实姓名（必填项）" v-model="真实姓名">
+                    </div>
+                </div>
+                <div class="inline fields">
+                    <div class="eight wide field" style="padding-left: 0.7em">
+                        <i class="user secret icon"></i>
+                        <label>身份</label>
+                        <input type="radio" value="1" v-model="用户类型">管理员
+                        <input type="radio" value="2" v-model="用户类型">教师
+                        <input type="radio" value="3" v-model="用户类型">学生
+                    </div>
+                    <div class="eight wide field">
+                        <i class="venus mars icon"></i>
+                        <label>性别</label>
+                        <select v-model="性别">
+                            <option value="1">男</option>
+                            <option value="2">女</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field" v-if="用户类型 == 3 ? true : false">
+                    <div class="ui left icon input">
+                        <i class="info icon"></i>
+                        <input type="text" placeholder="学号" v-model="学号">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="mobile alternate icon"></i>
+                        <input type="text" placeholder="手机号" v-model="手机号">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="comment outline icon"></i>
+                        <input type="text" placeholder="描述" v-model="描述">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="check icon"></i>
+                        <input type="text" name="verify" placeholder="验证码（必填项）" v-model="验证码识别结果">
+                        <img :src="验证码图像" v-on:click="获取验证码()">
+                    </div>
+                </div>
+                <div class="ui fluid large teal submit button" @click.prevent="register()">注册</div>
+            </div>
+          <div class="ui error message"></div>
+        </form>
+        <div class="ui message">
+            我是游客？ <a href="/">返回首页</a>
+        </div>
+    </div>
+</div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                用户名: '',
+                密码: '',
+                确认密码: '',
+                真实姓名: '',
+                性别: 1,
+                用户类型: '1',
+                学号: '',
+                手机号: '',
+                描述: '',
+                验证码识别结果: '',
+                验证码id: '',
+                验证码图像: ''
+            },
+            created() {
+                this.获取验证码()
+            },
+            methods: {
+                获取验证码() {
+                    fetch('/api/captcha').then(resp => resp.json()).then(json => {
+                        this.验证码图像 = 'data:image/png;base64,' + json.验证码图像
+                        this.验证码id = json.验证码id
+                    })
+                },
+                register() {
+                    if (this.密码 == this.确认密码){
+                        fetch('/api/account', {
+                        method: 'post',
+                        body: JSON.stringify({
+                            用户名: this.用户名,
+                            密码: this.密码,
+                            用户类型: this.用户类型,
+                            真实姓名: this.真实姓名,
+                            性别: this.性别,
+                            学号: this.学号,
+                            手机号: this.手机号,
+                            描述: this.描述,
+                            验证码识别结果: this.验证码识别结果,
+                            验证码id: this.验证码id
+                        }),
+                        headers: {'content-type': 'application/json'}
+                        }).then(resp => resp.json()).then(json => {
+                            if (json.code === 200) {
+                                localStorage.token = json.token
+                                localStorage.用户名 = json.用户名
+                                localStorage.id = json.id
+                                localStorage.用户类型 =json.用户类型
+                                alert(json.message)
+                                location.href = '/'
+                            } else if (json.code === 401) {
+                                alert(json.message)
+                                this.用户名 = ''
+                            } else {
+                                this.获取验证码()
+                                alert(json.message)
+                                //this.用户名 = ''
+                                //this.密码 = ''
+                            }
+                        })
+                    } else {
+                        alert('两次输入的密码不同！')
+                        this.密码 = ''
+                        this.确认密码 = ''
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>

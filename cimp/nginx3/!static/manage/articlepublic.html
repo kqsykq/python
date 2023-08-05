@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/semantic.min.css">
+    <!-- <link rel="stylesheet" href="static/css/animate.css"> -->
+    <link rel="stylesheet" href="../static/css/custom.css">
+
+    <script src="../static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="../static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="../static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <title>我的论文</title>
+</head>
+<body>
+    <div id="container">
+        <!-- 导航 -->
+        <nav class="ui inverted attached segment m-shadow-small">
+            <div class="ui container">
+                <div class="ui inverted secondary stackable menu m-padded-tb-mini">
+                    <h2 class="ui teal header item">CIMP</h2>
+                    <a href="/" class="item active m-mobile-hide m-item"><i class="home icon"></i>首页</a>
+                    <a href="/show/articles.html" class="item m-mobile-hide m-item"><i class="idea icon"></i>优秀论文</a>
+                    <a href="/show/news.html" class="item m-mobile-hide m-item"><i class="clone icon"></i>校园新闻</a>
+                    <a href="/show/notices.html" class="item m-mobile-hide m-item"><i class="info icon"></i>通知公告</a>
+                    <div class="right m-mobile-hide item m-item">
+                        <div v-if="localStorage.token" class="item m-mobile-hide m-item"><i class="user icon"></i>{{ localStorage.用户名 }}</div>
+                    </div>
+                </div>
+            </div>
+            <a class="ui menu toggle black icon button m-top-right m-mobile-show" v-on:click="sidebar">
+                <i class="sidebar icon"></i>
+            </a>
+        </nav>
+
+        <!-- 中间内容  start-->
+        <div class="m-padded-tb-big m-container-small">
+            <div class="ui container">
+                <div class="ui fluid card" v-if="审核状态!=0">
+                    <div class="content">
+                        <div class="header">我的论文主题：{{ 论文主题 }}</div>
+                        <h5 class="ui header">导师：{{ 导师 }}</h5>
+                    </div>
+                    <div class="content">
+                        <div v-for="stream in 工作流列表">
+                            <div v-if="stream.论文状态事件==1"><h4 class="ui sub blue header">主题已创建</h4></div>
+                            <div v-if="stream.论文状态事件==2"><h4 class="ui sub red header">主题被驳回</h4></div>
+                            <div v-if="stream.论文状态事件==3"><h4 class="ui sub green header">主题通过</h4></div>
+                            <div v-if="stream.论文状态事件==4"><h4 class="ui sub blue header">论文已创建</h4></div>
+                            <div v-if="stream.论文状态事件==5"><h4 class="ui sub red header">论文被驳回</h4></div>
+                            <div v-if="stream.论文状态事件==6"><h4 class="ui sub green header">论文已通过</h4></div>
+                            <div v-if="stream.论文状态事件==7"><h4 class="ui sub purple header">主题已修改</h4></div>
+                            <div v-if="stream.论文状态事件==8"><h4 class="ui sub purple header">论文已修改</h4></div>
+                            <p v-html='stream.事件描述'>
+                            <p>时间：{{ stream.事件时间 }}</p>
+                            <div class="ui doubling divider"></div>
+                        </div>
+                        <div v-if="审核状态==1"><h3>主题已提交，请耐心等待老师审阅</h3></div>
+                        <div v-if="审核状态==2"><button class="ui primary button" @click="显示修改主题文本框()">修改主题</button></div>
+                        <div v-if="审核状态==3"><button class="ui primary button" @click="显示创建论文文本框()">创建论文</button></div>
+                        <div v-if="审核状态==4"><h3>论文已提交，请耐心等待老师审阅</h3></div>
+                        <div v-if="审核状态==5"><button class="ui primary button" @click="显示修改论文文本框()">修改论文</button></div>
+                        <div v-if="审核状态==6"><h1 class="ui red header m-inline-blok m-text-thin">恭喜，你的论文已通过！</h1><h1 class="ui yellow header m-inline-blok m-text-thin">评分：{{ 论文评分 }}</h1></div>
+                    </div>
+                </div>
+                <div v-if="审核状态==0">
+                    <a class="ui primary button" @click="显示创建主题文本框()">创建主题</a>
+                    <div class="ui divider"></div>
+                    <div v-show="主题可否被创建">
+                        <div class="ui fluid input">
+                            <input type="text" placeholder="请输入你的论文主题" v-model="论文主题">
+                        </div>
+                        <div class="ui divider"></div>
+                        <div id="div1">
+                            <p>你的论文主题介绍……</p>
+                        </div>
+                        <div class="ui divider"></div>
+                        选择导师：
+                        <select v-model="被选中的教师">
+                            <option v-for="教师 in 教师列表" v-bind:value="教师.id">{{教师.真实姓名}}--{{ 教师.用户名 }}</option>
+                        </select>
+                        <a class="ui primary right floated button" @click="提交主题创建()">创建主题</a>
+                    </div>
+                </div>
+                <div v-show="审核状态==2">
+                    <div v-show="主题可否被修改">
+                        <div class="ui fluid input">
+                            <input type="text" placeholder="请输入你的论文主题" v-model="论文主题">
+                        </div>
+                        <div class="ui divider"></div>
+                        <div id="div2">
+                            <p>你的论文主题介绍……</p>
+                        </div>
+                        <a class="ui primary right floated button" @click="提交主题修改()">确认修改</a>
+                    </div>
+                </div>
+                <div v-show="审核状态==3">
+                    <div v-show="论文可否被创建">
+                        <div id="div3">
+                            <p>你的论文内容……</p>
+                        </div>
+                        <a class="ui primary right floated button" @click="提交论文创建()">创建论文</a>
+                    </div>
+                </div>
+                <div v-show="审核状态==5">
+                    <div v-show="论文可否被修改">
+                        <div id="div4">
+                            <p>你的论文内容……</p>
+                        </div>
+                        <a class="ui primary right floated button" @click="提交论文修改()">确认修改</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 中间内容 end-->
+
+        <!-- 底部 -->
+        <div id="footer"></div>
+        <script>
+            $(function(){
+                $('#footer').load('../static/footer.html')
+            })
+        </script>
+        <!-- 底部 -->
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                审核状态: 0,
+                论文主题:'',
+                主题描述:'',
+                论文内容:'',
+                导师:'',
+                论文评分:0,
+                工作流列表: [],
+                主题可否被创建:false,
+                主题可否被修改:false,
+                论文可否被创建:false,
+                论文可否被修改:false,
+                被选中的教师:'',
+                教师列表:[{text:'A',value:'a'},{text:'B',value:'b'},{text:'C',value:'c'}],
+            },
+            created() {
+                fetch('/api/workstream', {
+                    headers: {
+                        'content-type': 'application/json',
+                        'token': localStorage.token,
+                    }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200){
+                            this.审核状态 = json.审核状态
+                            this.论文主题 = json.论文主题
+                            this.主题描述 = json.主题描述
+                            this.论文内容 = json.论文内容
+                            this.导师 = json.导师
+                            this.论文评分 = json.论文评分
+                            for (i=0; i<json.工作流列表.length; i++){
+                                    json.工作流列表[i].事件时间 = json.工作流列表[i].事件时间.split('T')[0] + "  " + json.工作流列表[i].事件时间.split('T')[1].split('.')[0]
+                            }
+                            this.工作流列表 = json.工作流列表
+                        }else {
+                            alert(json.message)
+                        }
+                })
+            },
+            methods: {
+                sidebar() {
+                    // 移动端，导航页开启关闭
+                    $(".m-item").toggleClass('m-mobile-hide');
+                },
+                显示创建主题文本框() {
+                    this.主题可否被创建 = true
+                    fetch('/api/teacherlist', {
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token,
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200){
+                            this.教师列表 = json.教师列表
+                        }else {
+                            alert(json.message)
+                            this.主题可否被创建 = false
+                        }
+                    })
+                },
+                提交主题创建() {
+                    fetch('/api/workstream', {
+                        method: 'post',
+                        body: JSON.stringify({
+                            论文状态事件: 1,
+                            论文主题: this.论文主题,
+                            主题描述: editor.txt.html(),
+                            导师id: this.被选中的教师,
+                        }),
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token,
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200){
+                            location.href = location.href
+                        }else {
+                            alert(json.message)
+                        }
+                    })
+                },
+                显示修改主题文本框() {
+                    this.主题可否被修改 = true
+                    editor2.txt.html(this.主题描述)
+                },
+                提交主题修改() {
+                    fetch('/api/workstream', {
+                        method: 'post',
+                        body: JSON.stringify({
+                            论文状态事件: 7,
+                            论文主题: this.论文主题,
+                            主题描述: editor2.txt.html(),
+                        }),
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token,
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200){
+                            location.href = location.href
+                        }else {
+                            alert(json.message)
+                        }
+                    })
+                },
+                显示创建论文文本框(){
+                    this.论文可否被创建 = true
+                },
+                提交论文创建(){
+                    fetch('/api/workstream', {
+                        method: 'post',
+                        body: JSON.stringify({
+                            论文状态事件: 4,
+                            论文内容: editor3.txt.html(),
+                        }),
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token,
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200){
+                            location.href = location.href
+                        }else {
+                            alert(json.message)
+                        }
+                    })
+                },
+                显示修改论文文本框() {
+                    this.论文可否被修改 = true
+                    editor4.txt.html(this.论文内容)
+                },
+                提交论文修改(){
+                    fetch('/api/workstream', {
+                        method: 'post',
+                        body: JSON.stringify({
+                            论文状态事件: 8,
+                            论文内容: editor4.txt.html(),
+                        }),
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token,
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200){
+                            location.href = location.href
+                        }else {
+                            alert(json.message)
+                        }
+                    })
+                }
+            }
+        })
+    </script>
+</body>
+<script type="text/javascript" src="../static/js/wangEditor-4.6.9.min.js"></script>
+<script type="text/javascript">
+    const E = window.wangEditor
+    const editor = new E("#div1")
+    //设置编辑区高度，默认300
+    editor.config.height = 150
+    //上传服务器接口地址
+    editor.config.uploadImgServer = '/api/upload'
+    //限制一次最多能传几张图片(默认是100张)
+    editor.config.uploadImgMaxLength = 9
+    //自定义 fileName
+    editor.config.uploadFileName = 'upload'
+    //上传图片时添加 http 请求的 header
+    editor.config.uploadImgHeaders = {Token: localStorage.token, }
+    //隐藏插入网络图片的功能，即只保留上传本地图片
+    editor.config.showLinkImg = false
+    //网络图片设置alt和跳转链接
+    editor.config.showLinkImgAlt = false
+    editor.config.showLinkImgHref = false
+    editor.create()
+
+    const E2 = window.wangEditor
+    const editor2 = new E2("#div2")
+    editor2.config.height = 150
+    editor2.config.uploadImgServer = '/api/upload'
+    editor2.config.uploadImgMaxLength = 9
+    editor2.config.uploadFileName = 'upload'
+    editor2.config.uploadImgHeaders = {Token: localStorage.token, }
+    editor2.config.showLinkImg = false
+    editor2.config.showLinkImgAlt = false
+    editor2.config.showLinkImgHref = false
+    editor2.create()
+
+    const E3 = window.wangEditor
+    const editor3 = new E3("#div3")
+    editor3.config.height = 300
+    editor3.config.uploadImgServer = '/api/upload'
+    editor3.config.uploadImgMaxLength = 9
+    editor3.config.uploadFileName = 'upload'
+    editor3.config.uploadImgHeaders = {Token: localStorage.token, }
+    editor3.config.showLinkImg = false
+    editor3.config.showLinkImgAlt = false
+    editor3.config.showLinkImgHref = false
+    editor3.create()
+
+    const E4 = window.wangEditor
+    const editor4 = new E4("#div4")
+    editor4.config.height = 300
+    editor4.config.uploadImgServer = '/api/upload'
+    editor4.config.uploadImgMaxLength = 9
+    editor4.config.uploadFileName = 'upload'
+    editor4.config.uploadImgHeaders = {Token: localStorage.token, }
+    editor4.config.showLinkImg = false
+    editor4.config.showLinkImgAlt = false
+    editor4.config.showLinkImgHref = false
+    editor4.create()
+</script>
+</html>

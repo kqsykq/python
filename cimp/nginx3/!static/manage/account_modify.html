@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/semantic.min.css">
+    <link rel="stylesheet" href="../static/css/custom.css">
+
+    <script src="../static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="../static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="../static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <title>账号信息修改</title>
+</head>
+
+<body>
+    <div id="container">
+        <!-- 导航 start-->
+        <nav class="ui inverted attached segment m-shadow-small">
+            <div class="ui container">
+                <div class="ui inverted secondary stackable menu m-padded-tb-mini">
+                    <h2 class="ui teal header item">后台管理</h2>
+                    <a href="/" class="item m-mobile-hide m-item"><i class="home icon"></i>返回首页</a>
+                    <a href="account.html" class="item active m-mobile-hide m-item"><i class="tag icon"></i>用户账号管理</a>
+                    <a href="articles.html" class="item m-mobile-hide m-item"><i class="clone icon"></i>论文管理</a>
+                    <a href="news.html" class="item m-mobile-hide m-item"><i class="newspaper icon"></i>校园新闻管理</a>
+                    <a href="notices.html" class="item m-mobile-hide m-item"><i class="info icon"></i>通知管理</a>
+                    <div class="right m-mobile-hide item m-item">
+                        <div v-if="localStorage.token" class="item m-mobile-hide m-item"><i class="user icon"></i>{{ localStorage.用户名 }}</div>
+                    </div>
+                </div>
+            </div>
+            <a class="ui menu toggle black icon button m-top-right m-mobile-show" v-on:click="sidebar">
+                <i class="sidebar icon"></i>
+            </a>
+        </nav>
+        <!-- 导航 end -->
+
+        <!-- 中间内容  start-->
+        <div class="m-padded-tb-big m-container-small">
+            <div class="ui container">
+                <table class="ui celled table">
+                    <thead>
+                        <tr>
+                            <th>用户信息</th>
+                            <th>当前值</th>
+                            <th>修改后(改哪个填哪个)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>用户名</td>
+                            <td>{{ 修改前的用户名 }}</td>
+                            <td><input type="text" v-model="修改后的用户名"></td>
+                        </tr>
+                        <tr>
+                          <td>密码</td>
+                          <td>密码不可查看</td>
+                          <td><input type="password" v-model="修改后的密码"></td>
+                        </tr>
+                        <tr>
+                          <td>真实姓名</td>
+                          <td>{{ 修改前的真实姓名 }}</td>
+                          <td><input type="text" v-model="修改后的真实姓名"></td>
+                        </tr>
+                        <tr>
+                          <td>性别</td>
+                          <td>{{ 修改前的性别 }}</td>
+                          <td>
+                              <select v-model="修改后的性别">
+                                  <option value="1">男</option>
+                                  <option value="2">女</option>
+                              </select>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>学号</td>
+                          <td>{{ 修改前的学号 }}</td>
+                          <td><input type="text" placeholder="可选项" v-model="修改后的学号"></td>
+                        </tr>
+                        <tr>
+                          <td>手机号</td>
+                          <td>{{ 修改前的手机号 }}</td>
+                          <td><input type="text" placeholder="可选项" v-model="修改后的手机号"></td>
+                        </tr>
+                        <tr>
+                          <td>描述</td>
+                          <td>{{ 修改前的描述 }}</td>
+                          <td><input type="text" placeholder="可选项" v-model="修改后的描述"></td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3">
+                                <a class="ui right floated primary button" @click="modify">修改</a>
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- 中间内容 end-->
+
+        <!-- 底部 -->
+        <div id="footer"></div>
+        <script>
+            $(function(){
+                $('#footer').load('../static/footer.html')
+            })
+        </script>
+        <!-- 底部 -->
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                修改前的用户名: '',
+                修改前的真实姓名: '',
+                修改前的性别: '',
+                修改前的学号: '',
+                修改前的手机号: '',
+                修改前的描述: '',
+                修改后的用户名: '',
+                修改后的密码: '',
+                修改后的真实姓名: '',
+                修改后的性别: '',
+                修改后的学号: '',
+                修改后的手机号: '',
+                修改后的描述: '',
+            },
+            created() {
+                fetch('/api/account/' + document.location.href.split('=')[1], {
+                    headers: {
+                        'content-type': 'application/json',
+                        'token': localStorage.token
+                    }
+                }).then(resp => resp.json()).then(json => {
+                    if (json.code == 200){
+                        this.修改前的用户名 = json.用户名
+                        this.修改前的真实姓名 = json.真实姓名
+                        if (json.性别 == 1){
+                            this.修改前的性别 = '男'
+                        }
+                        if (json.性别 == 2){
+                            this.修改前的性别 = '女'
+                        }
+                        this.修改前的学号 = json.学号
+                        this.修改前的手机号 = json.手机号
+                        this.修改前的描述 = json.描述
+                    }
+                    else {
+                        alert('获取账号信息失败！')
+                    }
+                })
+            },
+            methods: {
+                sidebar() {
+                    // 移动端，导航页开启关闭
+                    $(".m-item").toggleClass('m-mobile-hide');
+                },
+                modify() {
+                    var 修改结果字典 = {};
+                    if (this.修改后的用户名)
+                        修改结果字典['用户名'] = this.修改后的用户名
+                    if (this.修改后的密码)
+                        修改结果字典['密码'] = this.修改后的密码
+                    if (this.修改后的真实姓名)
+                        修改结果字典['真实姓名'] = this.修改后的真实姓名
+                    if (this.修改后的性别)
+                        修改结果字典['性别'] = this.修改后的性别
+                    if (this.修改后的学号)
+                        修改结果字典['学号'] = this.修改后的学号
+                    if (this.修改后的手机号)
+                        修改结果字典['手机号'] = this.修改后的手机号
+                    if (this.修改后的描述)
+                        修改结果字典['描述'] = this.修改后的描述
+
+                    fetch('/api/account/' + document.location.href.split('=')[1], {
+                        method: 'PUT',
+                        body: JSON.stringify(修改结果字典),
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token
+                        }
+                    }).then(resp => resp.json()).then(json => {
+                        if (json.code == 200) {
+                            alert('账号信息修改成功！')
+                            location.href = location.href
+                        } else {
+                            alert(json.message)
+                        }
+                    })
+                },
+            }
+        })
+    </script>
+</body>
+</html>

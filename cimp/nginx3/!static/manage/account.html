@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/semantic.min.css">
+    <link rel="stylesheet" href="../static/css/custom.css">
+
+    <script src="../static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="../static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="../static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <title>用户账号管理</title>
+</head>
+
+<body>
+    <div id="container">
+        <!-- 导航 start-->
+        <nav class="ui inverted attached segment m-shadow-small">
+            <div class="ui container">
+                <div class="ui inverted secondary stackable menu m-padded-tb-mini">
+                    <h2 class="ui teal header item">后台管理</h2>
+                    <a href="/" class="item m-mobile-hide m-item"><i class="home icon"></i>返回首页</a>
+                    <a href="account.html" class="item active m-mobile-hide m-item"><i class="tag icon"></i>用户账号管理</a>
+                    <a href="articles.html" class="item m-mobile-hide m-item"><i class="clone icon"></i>论文管理</a>
+                    <a href="news.html" class="item m-mobile-hide m-item"><i class="newspaper icon"></i>校园新闻管理</a>
+                    <a href="notices.html" class="item m-mobile-hide m-item"><i class="info icon"></i>通知管理</a>
+                    <div class="right m-mobile-hide item m-item">
+                        <div v-if="localStorage.token" class="item m-mobile-hide m-item"><i class="user icon"></i>{{ localStorage.用户名 }}</div>
+                    </div>
+                </div>
+            </div>
+            <a class="ui menu toggle black icon button m-top-right m-mobile-show" v-on:click="sidebar">
+                <i class="sidebar icon"></i>
+            </a>
+        </nav>
+        <!-- 导航 end -->
+
+        <!-- 中间内容  start-->
+        <!-- <div class="m-padded-tb-big m-container-small"> -->
+        <div class="m-padded-tb-big">
+            <div class="ui container">
+                <!-- 搜索表单 start -->
+                <div class="ui segment form">
+                    <div class="fields">
+                        <div class="field">
+                            <input type="text" placeholder="用户名" v-model="keywords">
+                        </div>
+                        <div class="field">
+                            <button class="ui teal basic button" v-on:click="search"><i class="search icon"></i>搜索</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 搜索表单 end -->
+                <!-- 博客列表 start -->
+                <table class="ui celled table">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>用户类型</th>
+                            <th>真实姓名</th>
+                            <th>性别</th>
+                            <th>学号</th>
+                            <th>手机号</th>
+                            <th>描述</th>
+                            <th>注册时间</th>
+                            <th>最后登录时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(用户,index) in 用户列表">
+                            <td>{{ 用户.用户名 }}</td>
+                            <td>{{ 用户.用户类型 }}</td>
+                            <td>{{ 用户.真实姓名 }}</td>
+                            <td>{{ 用户.性别 }}</td>
+                            <td>{{ 用户.学号 }}</td>
+                            <td>{{ 用户.手机号 }}</td>
+                            <td>{{ 用户.描述 }}</td>
+                            <td>{{ 用户.注册时间 }}</td>
+                            <td>{{ 用户.最后登录时间 }}</td>
+                            <td>
+                                <a :href="'account_modify.html?no=' + 用户.id" target="_blank" class="ui mini teal basic button">修改</a>
+                                <a class="ui mini red basic button" v-on:click="删除用户(用户.id,index)">删除</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="11">
+                                <span>第{{ 用户列表.pageno }}/{{ 用户列表.pageall }}页</span>
+                                <div class="ui mini pagination menu">
+                                    <a class="item" v-if="用户列表.pageno!=1" v-on:click="lastpage"><i class="ui left arrow icon"></i></a>
+                                    <a class="item" v-if="用户列表.pageno!=用户列表.pageall" v-on:click="nextpage"><i class="ui right arrow icon"></i></a>
+                                </div>
+                                <a href="/register.html" target="_blank" class="ui right floated green basic button">新增</a>
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+                <!-- 博客列表 end -->
+
+            </div>
+        </div>
+        <!-- 中间内容 end-->
+
+        <!-- 底部 -->
+        <div id="footer"></div>
+        <script>
+            $(function(){
+                $('#footer').load('../static/footer.html')
+            })
+        </script>
+        <!-- 底部 -->
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                用户列表: [],
+                pagesize: 5,
+                keywords: '',
+            },
+            created() {
+                this.获取第几页用户(1)
+            },
+            methods: {
+                sidebar() {
+                    // 移动端，导航页开启关闭
+                    $(".m-item").toggleClass('m-mobile-hide');
+                },
+                获取第几页用户(pageno) {
+                    fetch('/api/account?pagesize=' + this.pagesize + '&pageno=' + pageno + '&keywords=' + this.keywords, {
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token
+                        }
+                    }).then(resp => resp.json())
+                        .then(json => {
+                            if (json.code == 200){
+                                for (i=0; i<json.用户列表.length; i++){
+                                    if (json.用户列表[i].用户类型 == 1){
+                                        json.用户列表[i].用户类型 = '管理员'
+                                    }
+                                    if (json.用户列表[i].用户类型 == 2){
+                                        json.用户列表[i].用户类型 = '教师'
+                                    }
+                                    if (json.用户列表[i].用户类型 == 3){
+                                        json.用户列表[i].用户类型 = '学生'
+                                    }
+                                    if (json.用户列表[i].性别 == 1){
+                                        json.用户列表[i].性别 = '男'
+                                    }
+                                    if (json.用户列表[i].性别 == 2){
+                                        json.用户列表[i].性别 = '女'
+                                    }
+                                    json.用户列表[i].注册时间 = json.用户列表[i].注册时间.split('T')[0] + "  " + json.用户列表[i].注册时间.split('T')[1].split('.')[0]
+                                    if (json.用户列表[i].最后登录时间){
+                                        json.用户列表[i].最后登录时间 = json.用户列表[i].最后登录时间.split('T')[0] + "  " + json.用户列表[i].最后登录时间.split('T')[1].split('.')[0]
+                                    }
+                                }
+                                this.用户列表 = json.用户列表
+                                this.用户列表.pageno = pageno
+                                if (json.用户总数 % this.pagesize == 0)
+                                    this.用户列表.pageall = parseInt(json.用户总数 / this.pagesize)
+                                else
+                                    this.用户列表.pageall = parseInt(json.用户总数 / this.pagesize) + 1
+                            } else {
+                                alert(json.message)
+                            }
+                        })
+                },
+                search() {
+                    if (this.keywords){
+                        this.获取第几页用户(1)
+                    }else {
+                        alert("搜索内容不能为空！")
+                    }
+                },
+                lastpage() {
+                    if (this.用户列表.pageno == 1)
+                        alert("已经是第一页了！")
+                    else
+                        this.获取第几页用户(this.用户列表.pageno - 1)
+                },
+                nextpage() {
+                    if (this.用户列表.pageno == this.用户列表.pageall)
+                        alert("已经是最后一页了！")
+                    else
+                        this.获取第几页用户(this.用户列表.pageno + 1)
+                },
+                删除用户(id,index) {
+                    fetch('/api/account/' + id, {
+                        method: 'delete',
+                        headers: {
+                            'content-type': 'application/json',
+                            'token': localStorage.token
+                        }
+                        }).then(resp => resp.json()).then(json => {
+                            if (json.code == 200){
+                                this.用户列表.splice(index,1)
+                                alert("删除成功！")
+                                location.href = location.href
+                            }else {
+                                alert(json.message)
+                            }
+                        })
+                }
+            }
+        })
+    </script>
+</body>
+</html>

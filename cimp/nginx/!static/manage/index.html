@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/semantic.min.css">
+    <link rel="stylesheet" href="../static/css/custom.css">
+
+    <script src="../static/js/jquery-3.5.1.min.js" charset="utf-8"></script>
+    <script src="../static/js/semantic.min.js" charset="utf-8"></script>
+    <script src="../static/js/vue-2.6.11.min.js" charset="utf-8"></script>
+    <script src="../static/js/echarts-5.0.2.common.min.js"></script>
+
+    <title>后台管理</title>
+</head>
+
+<body>
+    <div id="container">
+        <!-- 导航 start-->
+        <nav class="ui inverted attached segment m-shadow-small">
+            <div class="ui container">
+                <div class="ui inverted secondary stackable menu m-padded-tb-mini">
+                    <h2 class="ui teal header item">后台管理</h2>
+                    <a href="/" class="item m-mobile-hide m-item"><i class="home icon"></i>返回首页</a>
+                    <a href="/manage/account.html" class="item m-mobile-hide m-item"><i class="tag icon"></i>用户账号管理</a>
+                    <a href="/manage/articles.html" class="item m-mobile-hide m-item"><i class="clone icon"></i>论文管理</a>
+                    <a href="/manage/news.html" class="item m-mobile-hide m-item"><i class="newspaper icon"></i>校园新闻管理</a>
+                    <a href="/manage/notices.html" class="item m-mobile-hide m-item"><i class="info icon"></i>通知管理</a>
+                    <div class="right m-mobile-hide item m-item">
+                        <div v-if="localStorage.token" class="item m-mobile-hide m-item"><i class="user icon"></i>{{ localStorage.用户名 }}</div>
+                    </div>
+                </div>
+            </div>
+            <a class="ui menu toggle black icon button m-top-right m-mobile-show" v-on:click="sidebar">
+                <i class="sidebar icon"></i>
+            </a>
+        </nav>
+        <!-- 导航 end -->
+
+        <!-- 中间内容  start-->
+        <div class="ui vertical stripe quote segment">
+            <div class="ui equal width stackable internally celled grid">
+                <div class="center aligned row">
+                    <div class="eight wide column">
+                        <div class="ui container" style="padding-left: 10em;">
+                            <div class="ui card fluid">
+                                <div class="content center aligned">
+                                    <a class="header">{{ localStorage.用户名 }}的个人信息</a><div class="ui divider"></div>
+                                    <div class="meta">
+                                        <span class="date"><i class="intersex icon"></i>：{{ 性别 }}<div class="ui divider"></div></span>
+                                        <span class="date">姓名：{{ 真实姓名 }}<div class="ui divider"></div></span>
+                                        <span class="date">学号：{{ 学号 }}<div class="ui divider"></div></span>
+                                        <span class="date">手机号：{{ 手机号 }}<div class="ui divider"></div></span>
+                                        <span class="date">注册时间：{{ 注册时间 }}<div class="ui divider"></div></span>
+                                    </div>
+                                    <div class="description" v-if="描述==''">个性签名：这个人很懒，什么都没有说</div>
+                                    <div class="description" v-if="描述!=''">个性签名：{{ 描述 }}</div>
+                                </div>
+                                <div class="extra content center aligned">
+                                    <a><i class="user icon"></i>{{ 用户类型 }}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div id="main" style="width: 35em;height:30em;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间内容 end-->
+
+        <!-- 底部 -->
+        <div id="footer"></div>
+        <script>
+            $(function(){
+                $('#footer').load('../static/footer.html')
+            })
+        </script>
+        <!-- 底部 -->
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#container',
+            data: {
+                性别:'',
+                用户类型:'',
+                学号:'',
+                真实姓名:'',
+                手机号:'',
+                注册时间:'',
+                描述:'',
+                chartsdata:[]
+            },
+            mounted(){
+                this.draw();
+            },
+            created() {
+                fetch('/api/account/' + localStorage.id, {
+                    headers: {
+                        'content-type': 'application/json',
+                        'token': localStorage.token
+                    }
+                }).then(resp => resp.json())
+                    .then(json => {
+                        if (json.code == 200){
+                            if (json.性别 == 1){
+                                this.性别 = "男"
+                            }else {
+                                this.性别 = "女"
+                            }
+                            if (json.用户类型 == 1){
+                                this.用户类型 = "管理员"
+                            } else if (json.用户类型 == 2){
+                                this.用户类型 = "教师"
+                            } else {
+                                this.用户类型 = "学生"
+                            }
+                            this.学号 = json.学号
+                            this.手机号 = json.手机号
+                            this.注册时间 = json.注册时间.split('T')[0] + "  " + json.注册时间.split('T')[1].split('.')[0]
+                            this.真实姓名 = json.真实姓名
+                            this.描述 = json.描述
+                        }else {
+                            alert(json.message)
+                        }
+                    })
+            },
+            methods: {
+                sidebar() {
+                    // 移动端，导航页开启关闭
+                    $(".m-item").toggleClass('m-mobile-hide');
+                },
+                draw(){
+                    // 基于准备好的dom，初始化echarts实例
+                    var chartDom = document.getElementById('main');
+                    var myChart = echarts.init(chartDom);
+                    var option;
+                    // 指定图表的配置项和数据
+                    option = {
+                        tooltip: {
+                            trigger: 'item'
+                        },
+                        legend: {
+                            top: '5%',
+                            left: 'center'
+                        },
+                        series: [
+                            {
+                                name: '数量统计',
+                                type: 'pie',
+                                radius: ['40%', '70%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 10,
+                                    borderColor: '#fff',
+                                    borderWidth: 2
+                                },
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: '40',
+                                        fontWeight: 'bold'
+                                    }
+                                },
+                                labelLine: {
+                                    show: false
+                                },
+                                data: this.chartsdata
+                            }
+                        ]
+                    };
+                    fetch('/api/echarts', {
+                        headers: {
+                            'content-type': 'application/json',
+                        }
+                        }).then(resp => resp.json()).then(json => {
+                            this.chartsdata.push({value: json.论文数量, name: '学生论文'})
+                            this.chartsdata.push({value: json.新闻数量, name: '校园新闻'})
+                            this.chartsdata.push({value: json.通知数量, name: '通知公告'})
+                            myChart.setOption(option);
+                    })
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+2023/08/05 10:08:27 [error] 19488#8804: *1 CreateFile() "K:\cimp\nginx2/html/favicon.ico" failed (2: The system cannot find the file specified), client: 127.0.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "localhost", referrer: "http://localhost/"
+2023/08/05 10:17:00 [notice] 9068#9144: signal process started
+2023/08/05 10:17:00 [error] 9068#9144: OpenEvent("Global\ngx_stop_6708") failed (2: The system cannot find the file specified)
+2023/08/05 10:18:31 [error] 13824#14276: *1 CreateFile() "K:\cimp\nginx/html/favicon.ico" failed (2: The system cannot find the file specified), client: 127.0.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "localhost", referrer: "http://localhost/"
+2023/08/05 10:19:14 [notice] 3668#15256: signal process started
+2023/08/05 10:23:50 [notice] 3504#7636: signal process started
